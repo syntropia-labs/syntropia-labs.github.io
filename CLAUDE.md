@@ -13,6 +13,7 @@ This is a static GitHub Pages site for syntropia.dev - a single-page "coming soo
   - **[css/style.css](public/css/style.css)** - All CSS styles and animations
   - **[js/main.js](public/js/main.js)** - Interactive canvas JavaScript (particles, grid highlights, spring physics)
   - **[images/logo.svg](public/images/logo.svg)** - SVG logo mark (rotated diamond/rhombus design)
+  - **[images/logo-*.png](public/images/)** - PNG logo exports (32, 64, 128, 180, 192, 256, 512px)
   - **[images/favicon.svg](public/images/favicon.svg)** - Browser favicon (32×32)
   - **[images/apple-touch-icon.svg](public/images/apple-touch-icon.svg)** - iOS home screen icon (180×180)
 - **[CNAME](CNAME)** - Custom domain configuration for GitHub Pages
