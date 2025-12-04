@@ -1,0 +1,26 @@
+<svg width="56" height="56" viewBox="-12 -12 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Outer rotated square (border) -->
+  <rect
+    x="0"
+    y="0"
+    width="56"
+    height="56"
+    transform="rotate(45 28 28)"
+    fill="none"
+    stroke="white"
+    stroke-width="2"
+    rx="16"
+  />
+
+  <!-- Inner rotated square (fill) -->
+  <rect
+    x="12"
+    y="12"
+    width="32"
+    height="32"
+    transform="rotate(45 28 28)"
+    fill="white"
+    fill-opacity="0.8"
+    rx="8"
+  />
+</svg>
