@@ -20,11 +20,6 @@ const damping = 0.65;
 
 let logoCenter = { x: 0, y: 0 };
 
-// Gaussian function for bell curve falloff
-function gaussian(x, sigma) {
-    return Math.exp(-(x * x) / (2 * sigma * sigma));
-}
-
 // Particle class for orbiting dots
 class Particle {
     constructor() {
@@ -48,37 +43,42 @@ class Particle {
         this.offsetY = 0;
     }
 
-    update(deltaMultiplier) {
+    update(deltaMultiplier, velocityDamping, offsetDamping) {
         // Scale rotation and wobble by delta time
         this.angle += this.speed * deltaMultiplier;
         this.wobbleAngle += this.wobbleSpeed * deltaMultiplier;
 
-        const wobble = Math.sin(this.wobbleAngle) * this.wobbleAmount;
+        // Cache trig calculations
+        const wobbleSin = Math.sin(this.wobbleAngle);
+        const angleCos = Math.cos(this.angle);
+        const angleSin = Math.sin(this.angle);
+
+        const wobble = wobbleSin * this.wobbleAmount;
         const radius = this.baseRadius + wobble;
 
-        const baseX = logoCenter.x + Math.cos(this.angle) * radius;
-        const baseY = logoCenter.y + Math.sin(this.angle) * radius;
+        const baseX = logoCenter.x + angleCos * radius;
+        const baseY = logoCenter.y + angleSin * radius;
 
         // Use smoothed cursor position for particle influence
         const dx = smoothX - baseX;
         const dy = smoothY - baseY;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        const influenceRadius = 150;
+        const distSq = dx * dx + dy * dy;
+        const influenceRadiusSq = 22500; // 150^2
 
-        if (dist < influenceRadius && dist > 0) {
-            const force = (1 - dist / influenceRadius) * 2;
-            this.vx -= (dx / dist) * force * deltaMultiplier;
-            this.vy -= (dy / dist) * force * deltaMultiplier;
+        // Early exit if too far - use squared distance to avoid sqrt
+        if (distSq < influenceRadiusSq && distSq > 0) {
+            const dist = Math.sqrt(distSq); // Only calculate sqrt when needed
+            const force = (1 - dist / 150) * 2;
+            const invDist = 1 / dist;
+            this.vx -= dx * invDist * force * deltaMultiplier;
+            this.vy -= dy * invDist * force * deltaMultiplier;
         }
 
         // Scale velocity application by delta time
         this.offsetX += this.vx * deltaMultiplier;
         this.offsetY += this.vy * deltaMultiplier;
 
-        // Convert damping to frame-independent
-        const velocityDamping = Math.pow(0.92, deltaMultiplier);
-        const offsetDamping = Math.pow(0.95, deltaMultiplier);
-
+        // Apply pre-calculated damping
         this.vx *= velocityDamping;
         this.vy *= velocityDamping;
         this.offsetX *= offsetDamping;
@@ -88,21 +88,20 @@ class Particle {
         this.y = baseY + this.offsetY;
     }
 
-    draw() {
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(255, 255, 255, ${this.opacity})`;
-        ctx.fill();
-    }
+    // Removed individual draw method - using batched drawing now
 }
 
-// Create particles
+// Create particles - reduce count on mobile
 const particles = [];
-const PARTICLE_COUNT = 30;
+const isMobile = /Mobile|Android|iP(hone|od)|IEMobile|BlackBerry|Kindle|Silk-Accelerated|(hpw|web)OS|Opera M(obi|ini)/.test(navigator.userAgent);
+const PARTICLE_COUNT = isMobile ? 15 : 30;
 
 for (let i = 0; i < PARTICLE_COUNT; i++) {
     particles.push(new Particle());
 }
+
+// Sort particles by opacity for efficient batched rendering
+particles.sort((a, b) => a.opacity - b.opacity);
 
 // Resize handler
 function resize() {
@@ -148,13 +147,46 @@ function updateSmoothCursor(deltaMultiplier) {
     smoothY += velocityY * deltaMultiplier;
 }
 
+// Batch draw particles by opacity groups
+// Particles are pre-sorted by opacity, so we can batch consecutive particles efficiently
+function drawParticlesBatched() {
+    if (particles.length === 0) return;
+
+    const TWO_PI = 6.283185307179586;
+    let currentOpacity = Math.round(particles[0].opacity * 10) / 10;
+
+    ctx.fillStyle = `rgba(255, 255, 255, ${currentOpacity})`;
+    ctx.beginPath();
+
+    for (let i = 0; i < particles.length; i++) {
+        const p = particles[i];
+        const pOpacity = Math.round(p.opacity * 10) / 10;
+
+        // If opacity changed, fill current batch and start new one
+        if (pOpacity !== currentOpacity) {
+            ctx.fill();
+            currentOpacity = pOpacity;
+            ctx.fillStyle = `rgba(255, 255, 255, ${currentOpacity})`;
+            ctx.beginPath();
+        }
+
+        // Add particle to current batch
+        ctx.moveTo(p.x + p.size, p.y);
+        ctx.arc(p.x, p.y, p.size, 0, TWO_PI);
+    }
+
+    // Fill the last batch
+    ctx.fill();
+}
+
 // Draw grid highlights with bell curve falloff (smaller squares)
 function drawGridHighlights() {
     if (smoothX < -500 || smoothY < -500) return;
 
-    const sigma = 120;
     const maxOpacity = 0.1;
-    const influenceRadius = sigma * 3;
+    const influenceRadius = 360; // sigma * 3 (120 * 3)
+    const twoSigmaSquared = 28800; // 2 * sigma^2 (2 * 120 * 120)
+    const halfHighlightSize = 10; // HIGHLIGHT_SIZE / 2
 
     // Calculate grid cell range to check (using smaller highlight grid)
     const startCol = Math.max(0, Math.floor((smoothX - influenceRadius) / HIGHLIGHT_SIZE));
@@ -163,19 +195,20 @@ function drawGridHighlights() {
     const endRow = Math.ceil((smoothY + influenceRadius) / HIGHLIGHT_SIZE);
 
     for (let col = startCol; col <= endCol; col++) {
-        for (let row = startRow; row <= endRow; row++) {
-            const cellX = col * HIGHLIGHT_SIZE;
-            const cellY = row * HIGHLIGHT_SIZE;
-            const cellCenterX = cellX + HIGHLIGHT_SIZE / 2;
-            const cellCenterY = cellY + HIGHLIGHT_SIZE / 2;
+        const cellX = col * HIGHLIGHT_SIZE;
+        const cellCenterX = cellX + halfHighlightSize;
 
-            // Calculate distance from smoothed cursor to cell center
+        for (let row = startRow; row <= endRow; row++) {
+            const cellY = row * HIGHLIGHT_SIZE;
+            const cellCenterY = cellY + halfHighlightSize;
+
+            // Calculate squared distance first
             const dx = smoothX - cellCenterX;
             const dy = smoothY - cellCenterY;
-            const dist = Math.sqrt(dx * dx + dy * dy);
+            const distSq = dx * dx + dy * dy;
 
-            // Apply gaussian falloff
-            const intensity = gaussian(dist, sigma);
+            // Inline gaussian calculation: exp(-(x*x) / (2*sigma^2))
+            const intensity = Math.exp(-distSq / twoSigmaSquared);
             const opacity = intensity * maxOpacity;
 
             if (opacity > 0.001) {
@@ -191,9 +224,15 @@ let lastTime = performance.now();
 const TARGET_FPS = 30; // Lower FPS for better mobile performance
 const TARGET_FRAME_TIME = 1000 / TARGET_FPS; // 33.33ms
 
+// Performance stats tracking
+let animateTimeSamples = [];
+const MAX_SAMPLES = 10;
+let showStats = false;
+
 // Animation loop
 function animate() {
-    const currentTime = performance.now();
+    const animateStartTime = performance.now();
+    const currentTime = animateStartTime;
     const deltaTime = currentTime - lastTime;
     const deltaMultiplier = deltaTime / (1000 / 60); // Normalize to 60fps baseline
     lastTime = currentTime;
@@ -209,11 +248,30 @@ function animate() {
     // Draw grid highlights first (behind particles)
     drawGridHighlights();
 
-    // Update and draw particles
-    particles.forEach(particle => {
-        particle.update(cappedDelta);
-        particle.draw();
-    });
+    // Pre-calculate damping factors once per frame
+    const velocityDamping = Math.pow(0.92, cappedDelta);
+    const offsetDamping = Math.pow(0.95, cappedDelta);
+
+    // Update all particles
+    for (let i = 0; i < particles.length; i++) {
+        particles[i].update(cappedDelta, velocityDamping, offsetDamping);
+    }
+
+    // Draw all particles in batches
+    drawParticlesBatched();
+
+    // Update stats if visible
+    if (showStats) {
+        // Track animation performance
+        const animateEndTime = performance.now();
+        const animateTime = animateEndTime - animateStartTime;
+        animateTimeSamples.push(animateTime);
+        if (animateTimeSamples.length > MAX_SAMPLES) {
+            animateTimeSamples.shift();
+        }
+
+        updateStatsDisplay();
+    }
 }
 
 // Initialize
@@ -222,6 +280,49 @@ resize();
 
 // Use setInterval instead of requestAnimationFrame for better mobile performance
 setInterval(animate, TARGET_FRAME_TIME);
+
+// Create stats display element
+const statsDisplay = document.createElement('div');
+statsDisplay.id = 'statsDisplay';
+document.body.appendChild(statsDisplay);
+
+// Detect device type
+function getDeviceType() {
+    const ua = navigator.userAgent;
+    if (/(tablet|ipad|playbook|silk)|(android(?!.*mobi))/i.test(ua)) {
+        return 'Tablet';
+    }
+    if (/Mobile|Android|iP(hone|od)|IEMobile|BlackBerry|Kindle|Silk-Accelerated|(hpw|web)OS|Opera M(obi|ini)/.test(ua)) {
+        return 'Mobile';
+    }
+    return 'Desktop';
+}
+
+// Update stats display
+function updateStatsDisplay() {
+    const avgAnimateTime = animateTimeSamples.length > 0
+        ? (animateTimeSamples.reduce((a, b) => a + b, 0) / animateTimeSamples.length).toFixed(2)
+        : '0.00';
+
+    statsDisplay.innerHTML = `
+        <div>Screen: ${window.innerWidth}x${window.innerHeight}</div>
+        <div>Device: ${getDeviceType()}</div>
+        <div>Avg Animate: ${avgAnimateTime}ms</div>
+        <div>Target Frame: ${TARGET_FRAME_TIME.toFixed(2)}ms</div>
+    `;
+}
+
+// Toggle stats with Ctrl+Shift+S
+document.addEventListener('keydown', (e) => {
+    if (e.ctrlKey && e.shiftKey && e.key === 'S') {
+        e.preventDefault();
+        showStats = !showStats;
+        statsDisplay.classList.toggle('visible', showStats);
+        if (showStats) {
+            updateStatsDisplay();
+        }
+    }
+});
 
 // Set current year in footer
 const yearSpan = document.getElementById('currentYear');
@@ -372,7 +473,7 @@ if (contactForm) {
 
             if (response.ok) {
                 // Success - hide form and show success message
-                contactForm.style.display = 'none';
+                contactForm.classList.add('hidden');
 
                 const statusDiv = document.createElement('div');
                 statusDiv.className = 'form-status success';
