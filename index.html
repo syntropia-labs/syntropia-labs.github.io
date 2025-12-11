@@ -26,8 +26,22 @@
     <canvas id="interactiveCanvas"></canvas>
     <div class="grid-overlay"></div>
 
+    <!-- Navigation Bar -->
+    <nav class="navbar" id="navbar">
+        <a href="#home" class="navbar-logo" id="navbarLogo">
+            <div class="navbar-logo-mark"></div>
+            <span class="navbar-logo-text">Syntropia</span>
+        </a>
+        <div class="nav-links">
+            <a href="#home" class="nav-link active" data-section="home">Home</a>
+            <a href="#visionSection" class="nav-link" data-section="visionSection">Vision</a>
+            <a href="#productSection" class="nav-link" data-section="productSection">Product</a>
+            <a href="#contactSection" class="nav-link" data-section="contactSection">Contact</a>
+        </div>
+    </nav>
+
     <div class="container">
-        <div class="content">
+        <div class="content" id="home">
             <div class="logo-wrapper" id="logoWrapper">
                 <div class="logo-mark"></div>
             </div>
@@ -38,6 +52,54 @@
                 <span>Coming Soon</span>
             </div>
         </div>
+
+        <!-- Vision Section -->
+        <section class="vision-section" id="visionSection">
+            <div class="vision-content">
+                <p class="section-eyebrow">OUR VISION</p>
+                <h2 class="section-title">The New Reality</h2>
+                <div class="vision-text">
+                    <p><strong>Software delivery is undergoing a fundamental transformation.</strong> AI models now generate reliable code autonomously, collapsing traditional development layers into something simpler and more powerful.</p>
+                    <p><strong>The future stack reduces to two components:</strong> cloud infrastructure and AI workflows that manage business operations. Custom applications emerge directly from design specs and user requirements—no traditional coding required.</p>
+                    <p><strong>This isn't incremental improvement.</strong> It's a structural shift that changes what's possible to build and how quickly organizations can adapt.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Product Section -->
+        <section class="product-section" id="productSection">
+            <div class="product-content">
+                <div class="product-intro">
+                    <p class="section-eyebrow">AGENTIC DATA PLATFORM</p>
+                    <h2 class="section-title">Days Instead of Months</h2>
+                    <div class="product-description">
+                        <p><strong>Autonomous data engineering for the AI era.</strong> Our platform leverages modern AI to manage ETL processes end-to-end—from discovery to integration—while your team focuses on decisions, not pipelines.</p>
+
+                        <p><strong>Traditional data projects require months of manual work:</strong> mapping sources, writing integration code, building pipelines, testing transformations. The complexity grows exponentially with each new data source, making enterprise analytics economically unfeasible for many organizations.</p>
+
+                        <p><strong>Our Agentic Data Platform fundamentally changes this paradigm.</strong> Instead of AI-assisted tools requiring human oversight, we provide genuine autonomy. Business experts define what insights they need, and the AI independently handles solution design, implementation, and testing—operating within your infrastructure while compressing timelines from months to days.</p>
+                    </div>
+                </div>
+                <div class="product-benefits">
+                    <div class="benefit-card">
+                        <h3 class="benefit-title">Autonomous Intelligence</h3>
+                        <p class="benefit-description">Genuine autonomy, not AI-assisted tools. Define requirements; AI handles design, implementation, and testing.</p>
+                    </div>
+                    <div class="benefit-card">
+                        <h3 class="benefit-title">Rapid Deployment</h3>
+                        <p class="benefit-description">Operational insights in days instead of months, with immediate query capability across integrated data sources.</p>
+                    </div>
+                    <div class="benefit-card">
+                        <h3 class="benefit-title">Cost Efficiency</h3>
+                        <p class="benefit-description">Scale analytics without scaling engineering teams. AI automates discovery and integration work traditionally requiring months of manual effort.</p>
+                    </div>
+                    <div class="benefit-card">
+                        <h3 class="benefit-title">Infrastructure Control</h3>
+                        <p class="benefit-description">Self-contained deployment within your infrastructure. Full portability across database platforms with enterprise-grade security.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
 
         <section class="contact-section" id="contactSection">
             <div class="contact-content">

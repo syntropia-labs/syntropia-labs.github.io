@@ -234,7 +234,63 @@ if (yearSpan) {
     yearSpan.textContent = new Date().getFullYear();
 }
 
-// Contact section scroll reveal
+// Navigation functionality
+const navLinks = document.querySelectorAll('.nav-link');
+const sections = {
+    home: document.getElementById('home'),
+    visionSection: document.getElementById('visionSection'),
+    productSection: document.getElementById('productSection'),
+    contactSection: document.getElementById('contactSection')
+};
+
+// Smooth scroll to section
+navLinks.forEach(link => {
+    link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const targetId = link.getAttribute('data-section');
+        const targetSection = sections[targetId];
+
+        if (targetSection) {
+            targetSection.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start'
+            });
+        }
+    });
+});
+
+// Update active nav link based on scroll position
+const navObserverOptions = {
+    root: null,
+    rootMargin: '-50% 0px -50% 0px',
+    threshold: 0
+};
+
+const navObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            // Remove active class from all links
+            navLinks.forEach(link => link.classList.remove('active'));
+
+            // Add active class to corresponding link
+            const activeLink = document.querySelector(`[data-section="${entry.target.id}"]`);
+            if (activeLink) {
+                activeLink.classList.add('active');
+            }
+        }
+    });
+}, navObserverOptions);
+
+// Observe all sections
+Object.values(sections).forEach(section => {
+    if (section) {
+        navObserver.observe(section);
+    }
+});
+
+// Scroll reveal for sections
+const visionSection = document.getElementById('visionSection');
+const productSection = document.getElementById('productSection');
 const contactSection = document.getElementById('contactSection');
 
 const observerOptions = {
@@ -243,7 +299,7 @@ const observerOptions = {
     threshold: 0.2
 };
 
-const observer = new IntersectionObserver((entries) => {
+const sectionObserver = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
         if (entry.isIntersecting) {
             entry.target.classList.add('visible');
@@ -251,9 +307,38 @@ const observer = new IntersectionObserver((entries) => {
     });
 }, observerOptions);
 
-if (contactSection) {
-    observer.observe(contactSection);
+// Observe all sections
+if (visionSection) {
+    sectionObserver.observe(visionSection);
 }
+
+if (productSection) {
+    sectionObserver.observe(productSection);
+}
+
+if (contactSection) {
+    sectionObserver.observe(contactSection);
+}
+
+// Staggered animation for benefit cards
+const benefitCards = document.querySelectorAll('.benefit-card');
+
+const cardObserver = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+            // Add staggered delay based on card position
+            const cardIndex = Array.from(benefitCards).indexOf(entry.target);
+            setTimeout(() => {
+                entry.target.classList.add('visible');
+            }, cardIndex * 100); // 100ms delay between each card
+            cardObserver.unobserve(entry.target);
+        }
+    });
+}, observerOptions);
+
+benefitCards.forEach(card => {
+    cardObserver.observe(card);
+});
 
 // Contact form submission
 const contactForm = document.getElementById('contactForm');
