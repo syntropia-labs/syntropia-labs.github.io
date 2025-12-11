@@ -4,14 +4,20 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a static GitHub Pages site for syntropia.dev - a single-page landing page with interactive canvas animations and a contact form. The site is hosted at https://syntropia.dev (configured via CNAME).
+This is a static GitHub Pages site for syntropia.dev - a single-page landing page with interactive canvas animations, vision/product sections, navigation, and a contact form. The site is hosted at https://syntropia.dev (configured via CNAME).
+
+### Page Structure
+- **Home** - Hero section with logo, tagline, and "Coming Soon" status
+- **Vision** - "The New Reality" section explaining AI transformation in software delivery
+- **Product** - "Days Instead of Months" section showcasing the Agentic Data Platform
+- **Contact** - Contact form for user inquiries
 
 ## Repository Structure
 
-- **[index.html](index.html)** - Main HTML file with contact form
+- **[index.html](index.html)** - Main HTML file with navbar, sections, and contact form
 - **[public/](public/)** - Public assets directory
-  - **[css/style.css](public/css/style.css)** - All CSS styles, animations, and contact form styling
-  - **[js/main.js](public/js/main.js)** - Interactive canvas, form handling, scroll animations
+  - **[css/style.css](public/css/style.css)** - All CSS styles, glass-morphism effects, animations, navbar, sections
+  - **[js/main.js](public/js/main.js)** - Interactive canvas, navigation, scroll animations, form handling
   - **[images/logo.svg](public/images/logo.svg)** - SVG logo mark (rotated diamond/rhombus design)
   - **[images/logo-*.png](public/images/)** - PNG logo exports (32, 64, 128, 180, 192, 256, 512px)
   - **[images/favicon.svg](public/images/favicon.svg)** - Browser favicon (SVG)
@@ -73,7 +79,7 @@ The page features a sophisticated interactive canvas system built with vanilla J
 - All motion scaled by delta time for consistent speed across devices
 
 ### Animation Loop
-The `animate()` function runs at browser refresh rate and:
+The `animate()` function runs via `setInterval` at 30fps (TARGET_FRAME_TIME = 33.33ms) and:
 1. Calculates delta time and normalizes to 60fps baseline
 2. Clears canvas
 3. Updates logo center position (responsive to window resize)
@@ -81,11 +87,53 @@ The `animate()` function runs at browser refresh rate and:
 5. Draws grid highlights
 6. Updates and draws all particles (delta time scaled)
 
+**Note**: Uses `setInterval` instead of `requestAnimationFrame` for better mobile performance. The 30fps target provides smoother performance on mobile devices while maintaining fluid animations through delta time calculations.
+
 ### Responsive Behavior
 - Canvas resizes to full viewport
 - Logo center recalculates on scroll/resize
 - Footer and contact form layout changes on mobile (<640px)
 - Contact form width adapts with padding on small screens
+
+## Navigation Bar
+
+Fixed-position navbar at the top of the page with transparent glass-morphism design:
+
+### Features
+- **Transparent Background** - `rgba(17, 17, 21, 0.6)` with `backdrop-filter: blur(20px)`
+- **Logo Mark** - Rotated diamond design matching the hero logo
+- **Active State Tracking** - Uses Intersection Observer to highlight current section in viewport
+- **Smooth Scrolling** - Click navigation links to smoothly scroll to corresponding sections
+- **Responsive Design** - Adapts layout for mobile devices (<768px)
+
+### Implementation
+- **Scroll Detection** - `IntersectionObserver` with `rootMargin: '-50% 0px -50% 0px'` centers detection
+- **Active Link Highlighting** - Adds `.active` class to nav link when corresponding section enters viewport
+- **Data Attributes** - Links use `data-section` attribute matching section `id` for navigation mapping
+
+## Vision & Product Sections
+
+Two content sections that explain the company's vision and product offering:
+
+### Vision Section ("The New Reality")
+- **Content Structure** - Three paragraphs with justified text alignment
+- **Key Phrases** - Important concepts wrapped in `<strong>` tags for emphasis
+- **Topics** - AI transformation, future stack architecture, structural shift in software delivery
+
+### Product Section ("Days Instead of Months")
+- **Product Description** - Four-paragraph introduction to Agentic Data Platform
+- **Benefit Cards** - Four cards highlighting key features:
+  1. Autonomous Intelligence
+  2. Rapid Deployment
+  3. Cost Efficiency
+  4. Infrastructure Control
+- **Grid Layout** - Responsive 2-column grid (stacks on mobile)
+- **Glass-morphism Design** - Cards use same transparent background as navbar
+
+### Scroll Animations
+- **Section Reveals** - Sections fade in when 20% enters viewport (Intersection Observer)
+- **Staggered Cards** - Benefit cards animate sequentially with 100ms delays
+- **Once-only** - Animations trigger once and remain visible (observer unobserved after trigger)
 
 ## Contact Form
 
@@ -100,6 +148,7 @@ The page includes a below-the-fold contact section with scroll-triggered animati
 - **Loading States** - Button shows "Sending..." during submission and disables to prevent double-submit
 
 ### Styling
+- **Glass-morphism Background** - Form inputs use `rgba(17, 17, 21, 0.6)` with `backdrop-filter: blur(20px)`
 - Matches dark theme with subtle borders and hover effects
 - Smooth transitions for all interactive elements
 - Form inputs with focus states for better UX
@@ -120,7 +169,17 @@ The page includes a below-the-fold contact section with scroll-triggered animati
 
 ## Design System
 
-CSS variables defined in `:root`:
+### Glass-morphism Pattern
+Consistent transparent background effect applied across UI components:
+- **Background**: `rgba(17, 17, 21, 0.6)` - Semi-transparent dark background
+- **Blur**: `backdrop-filter: blur(20px)` - Frosted glass effect
+- **Border**: `1px solid rgba(255, 255, 255, 0.08)` - Subtle outline
+- **Applied to**: Navbar, benefit cards, form inputs
+
+This creates visual hierarchy while maintaining the minimalist aesthetic and allowing background elements (grid, particles, orbs) to show through.
+
+### CSS Variables
+Defined in `:root`:
 - **Colors**:
   - `--bg-primary: #0a0a0c` - Main background
   - `--bg-secondary: #111115` - Secondary backgrounds (form inputs, status badge)

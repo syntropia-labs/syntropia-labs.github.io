@@ -187,23 +187,18 @@ function drawGridHighlights() {
 }
 
 // Delta time tracking for consistent animation speed
-let lastTime = null;
-const TARGET_FPS = 60;
-const TARGET_FRAME_TIME = 1000 / TARGET_FPS; // 16.67ms
+let lastTime = performance.now();
+const TARGET_FPS = 30; // Lower FPS for better mobile performance
+const TARGET_FRAME_TIME = 1000 / TARGET_FPS; // 33.33ms
 
 // Animation loop
-function animate(currentTime) {
-    // Initialize lastTime on first frame
-    if (lastTime === null) {
-        lastTime = currentTime;
-    }
-
-    // Calculate delta time and normalize to 60fps baseline
+function animate() {
+    const currentTime = performance.now();
     const deltaTime = currentTime - lastTime;
-    const deltaMultiplier = deltaTime / TARGET_FRAME_TIME;
+    const deltaMultiplier = deltaTime / (1000 / 60); // Normalize to 60fps baseline
     lastTime = currentTime;
 
-    // Cap delta multiplier to prevent huge jumps when tab becomes inactive
+    // Cap delta multiplier to prevent huge jumps
     const cappedDelta = Math.min(deltaMultiplier, 3);
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -219,14 +214,14 @@ function animate(currentTime) {
         particle.update(cappedDelta);
         particle.draw();
     });
-
-    requestAnimationFrame(animate);
 }
 
 // Initialize
 window.addEventListener('resize', resize);
 resize();
-requestAnimationFrame(animate);
+
+// Use setInterval instead of requestAnimationFrame for better mobile performance
+setInterval(animate, TARGET_FRAME_TIME);
 
 // Set current year in footer
 const yearSpan = document.getElementById('currentYear');
