@@ -61,20 +61,24 @@ The page features a sophisticated interactive canvas system built with vanilla J
 - Time-independent damping using `Math.pow(damping, deltaMultiplier)`
 
 #### 3. Grid Highlighting System
-- Uses **Gaussian falloff** for smooth bell-curve intensity distribution
+- Uses **quadratic falloff** (`t²`) for smooth intensity distribution
 - Highlights 20px×20px cells (1/3 of background grid at 60px)
 - Follows the smooth cursor position, not actual mouse
-- `sigma: 120` controls falloff spread
+- `influenceRadius: 360px` controls falloff spread
 - `maxOpacity: 0.1` limits brightness
-- Optimized to only check cells within `influenceRadius`
+- **Batched rendering** - groups cells by opacity, reducing canvas operations by ~95%
+- Uses `ctx.rect()` + `fill()` instead of individual `fillRect()` calls
+- Optimized to only check cells within `influenceRadius` using squared distances
 
 #### 4. Particle System
-- 30 particles orbit around the logo center
+- **30 particles** on desktop, **15 on mobile** orbit around the logo center
 - Each particle has:
   - **Orbital motion** - circular path with varying radius
   - **Wobble effect** - sinusoidal radius variation for organic movement
   - **Cursor repulsion** - particles pushed away when smooth cursor approaches (150px influence)
   - **Velocity/offset damping** - smooth return to orbit after disturbance
+  - **Cached trigonometry** - pre-calculates sin/cos per frame
+- **Batched rendering** - particles pre-sorted by opacity, drawn in groups
 - Uses smooth cursor position for consistent behavior with grid highlights
 - All motion scaled by delta time for consistent speed across devices
 

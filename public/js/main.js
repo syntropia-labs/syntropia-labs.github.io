@@ -179,13 +179,13 @@ function drawParticlesBatched() {
     ctx.fill();
 }
 
-// Draw grid highlights with bell curve falloff (smaller squares)
+// Draw grid highlights with quadratic falloff (smaller squares) - batched for performance
 function drawGridHighlights() {
     if (smoothX < -500 || smoothY < -500) return;
 
     const maxOpacity = 0.1;
-    const influenceRadius = 360; // sigma * 3 (120 * 3)
-    const twoSigmaSquared = 28800; // 2 * sigma^2 (2 * 120 * 120)
+    const influenceRadius = 360;
+    const influenceRadiusSq = 129600; // 360^2 - pre-calculated for performance
     const halfHighlightSize = 10; // HIGHLIGHT_SIZE / 2
 
     // Calculate grid cell range to check (using smaller highlight grid)
@@ -193,6 +193,9 @@ function drawGridHighlights() {
     const endCol = Math.ceil((smoothX + influenceRadius) / HIGHLIGHT_SIZE);
     const startRow = Math.max(0, Math.floor((smoothY - influenceRadius) / HIGHLIGHT_SIZE));
     const endRow = Math.ceil((smoothY + influenceRadius) / HIGHLIGHT_SIZE);
+
+    // Group cells by opacity (quantize to reduce unique values)
+    const opacityGroups = new Map();
 
     for (let col = startCol; col <= endCol; col++) {
         const cellX = col * HIGHLIGHT_SIZE;
@@ -207,16 +210,32 @@ function drawGridHighlights() {
             const dy = smoothY - cellCenterY;
             const distSq = dx * dx + dy * dy;
 
-            // Inline gaussian calculation: exp(-(x*x) / (2*sigma^2))
-            const intensity = Math.exp(-distSq / twoSigmaSquared);
+            // Quadratic falloff - much cheaper than Math.exp, visually similar
+            const t = 1 - distSq / influenceRadiusSq;
+            const intensity = t > 0 ? t * t : 0;
             const opacity = intensity * maxOpacity;
 
             if (opacity > 0.001) {
-                ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
-                ctx.fillRect(cellX, cellY, HIGHLIGHT_SIZE, HIGHLIGHT_SIZE);
+                // Round opacity to reduce unique values (improves batching)
+                const opacityKey = Math.round(opacity * 400) / 400;
+
+                if (!opacityGroups.has(opacityKey)) {
+                    opacityGroups.set(opacityKey, []);
+                }
+                opacityGroups.get(opacityKey).push({ x: cellX, y: cellY });
             }
         }
     }
+
+    // Draw each opacity group in a single batch
+    opacityGroups.forEach((cells, opacity) => {
+        ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
+        ctx.beginPath();
+        for (let i = 0; i < cells.length; i++) {
+            ctx.rect(cells[i].x, cells[i].y, HIGHLIGHT_SIZE, HIGHLIGHT_SIZE);
+        }
+        ctx.fill();
+    });
 }
 
 // Delta time tracking for consistent animation speed
