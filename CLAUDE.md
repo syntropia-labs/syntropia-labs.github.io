@@ -64,14 +64,14 @@ The page features a sophisticated interactive canvas system built with vanilla J
 - Uses **quadratic falloff** (`t²`) for smooth intensity distribution
 - Highlights 20px×20px cells (1/3 of background grid at 60px)
 - Follows the smooth cursor position, not actual mouse
-- `influenceRadius: 360px` controls falloff spread
+- `influenceRadius: 360px` on desktop, **180px on mobile** (half radius for better mobile performance)
 - `maxOpacity: 0.1` limits brightness
 - **Batched rendering** - groups cells by opacity, reducing canvas operations by ~95%
 - Uses `ctx.rect()` + `fill()` instead of individual `fillRect()` calls
 - Optimized to only check cells within `influenceRadius` using squared distances
 
 #### 4. Particle System
-- **30 particles** on desktop, **15 on mobile** orbit around the logo center
+- **30 particles** on all devices orbit around the logo center
 - Each particle has:
   - **Orbital motion** - circular path with varying radius
   - **Wobble effect** - sinusoidal radius variation for organic movement

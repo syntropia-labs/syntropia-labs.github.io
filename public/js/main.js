@@ -91,10 +91,10 @@ class Particle {
     // Removed individual draw method - using batched drawing now
 }
 
-// Create particles - reduce count on mobile
+// Create particles - same count on all devices
 const particles = [];
 const isMobile = /Mobile|Android|iP(hone|od)|IEMobile|BlackBerry|Kindle|Silk-Accelerated|(hpw|web)OS|Opera M(obi|ini)/.test(navigator.userAgent);
-const PARTICLE_COUNT = isMobile ? 15 : 30;
+const PARTICLE_COUNT = 30;
 
 for (let i = 0; i < PARTICLE_COUNT; i++) {
     particles.push(new Particle());
@@ -184,8 +184,8 @@ function drawGridHighlights() {
     if (smoothX < -500 || smoothY < -500) return;
 
     const maxOpacity = 0.1;
-    const influenceRadius = 360;
-    const influenceRadiusSq = 129600; // 360^2 - pre-calculated for performance
+    const influenceRadius = isMobile ? 180 : 360; // Half radius on mobile
+    const influenceRadiusSq = influenceRadius * influenceRadius; // Pre-calculated for performance
     const halfHighlightSize = 10; // HIGHLIGHT_SIZE / 2
 
     // Calculate grid cell range to check (using smaller highlight grid)
