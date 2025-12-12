@@ -64,7 +64,7 @@ The page features a sophisticated interactive canvas system built with vanilla J
 - Uses **quadratic falloff** (`t²`) for smooth intensity distribution
 - Highlights 20px×20px cells (1/3 of background grid at 60px)
 - Follows the smooth cursor position, not actual mouse
-- `influenceRadius: 360px` on desktop, **180px on mobile** (half radius for better mobile performance)
+- `influenceRadius: 360px` on desktop, **120px on mobile** (1/3 radius for better mobile performance)
 - `maxOpacity: 0.1` limits brightness
 - **Batched rendering** - groups cells by opacity, reducing canvas operations by ~95%
 - Uses `ctx.rect()` + `fill()` instead of individual `fillRect()` calls
@@ -83,7 +83,7 @@ The page features a sophisticated interactive canvas system built with vanilla J
 - All motion scaled by delta time for consistent speed across devices
 
 ### Animation Loop
-The `animate()` function runs via `setInterval` at 30fps (TARGET_FRAME_TIME = 33.33ms) and:
+The `animate()` function runs via `requestAnimationFrame` and:
 1. Calculates delta time and normalizes to 60fps baseline
 2. Clears canvas
 3. Updates logo center position (responsive to window resize)
@@ -91,7 +91,11 @@ The `animate()` function runs via `setInterval` at 30fps (TARGET_FRAME_TIME = 33
 5. Draws grid highlights
 6. Updates and draws all particles (delta time scaled)
 
-**Note**: Uses `setInterval` instead of `requestAnimationFrame` for better mobile performance. The 30fps target provides smoother performance on mobile devices while maintaining fluid animations through delta time calculations.
+**Benefits of requestAnimationFrame**:
+- Syncs with display refresh rate (60Hz, 120Hz, 144Hz, etc.)
+- Automatically pauses when tab is hidden (saves battery)
+- Better browser optimization than setInterval
+- Delta time system ensures consistent animation speed across all refresh rates
 
 ### Responsive Behavior
 - Canvas resizes to full viewport

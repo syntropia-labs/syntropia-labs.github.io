@@ -184,7 +184,7 @@ function drawGridHighlights() {
     if (smoothX < -500 || smoothY < -500) return;
 
     const maxOpacity = 0.1;
-    const influenceRadius = isMobile ? 180 : 360; // Half radius on mobile
+    const influenceRadius = isMobile ? 120 : 360; // Smaller radius on mobile (1/3 of desktop)
     const influenceRadiusSq = influenceRadius * influenceRadius; // Pre-calculated for performance
     const halfHighlightSize = 10; // HIGHLIGHT_SIZE / 2
 
@@ -240,13 +240,13 @@ function drawGridHighlights() {
 
 // Delta time tracking for consistent animation speed
 let lastTime = performance.now();
-const TARGET_FPS = 30; // Lower FPS for better mobile performance
-const TARGET_FRAME_TIME = 1000 / TARGET_FPS; // 33.33ms
 
 // Performance stats tracking
 let animateTimeSamples = [];
+let frameTimeSamples = [];
 const MAX_SAMPLES = 10;
 let showStats = false;
+let lastFrameTime = performance.now();
 
 // Animation loop
 function animate() {
@@ -281,7 +281,7 @@ function animate() {
 
     // Update stats if visible
     if (showStats) {
-        // Track animation performance
+        // Track compute time (how long animate() takes)
         const animateEndTime = performance.now();
         const animateTime = animateEndTime - animateStartTime;
         animateTimeSamples.push(animateTime);
@@ -289,16 +289,27 @@ function animate() {
             animateTimeSamples.shift();
         }
 
+        // Track actual frame time (RAF interval)
+        const frameTime = animateStartTime - lastFrameTime;
+        frameTimeSamples.push(frameTime);
+        if (frameTimeSamples.length > MAX_SAMPLES) {
+            frameTimeSamples.shift();
+        }
+        lastFrameTime = animateStartTime;
+
         updateStatsDisplay();
     }
+
+    // Request next frame
+    requestAnimationFrame(animate);
 }
 
 // Initialize
 window.addEventListener('resize', resize);
 resize();
 
-// Use setInterval instead of requestAnimationFrame for better mobile performance
-setInterval(animate, TARGET_FRAME_TIME);
+// Start animation loop
+requestAnimationFrame(animate);
 
 // Create stats display element
 const statsDisplay = document.createElement('div');
@@ -319,15 +330,24 @@ function getDeviceType() {
 
 // Update stats display
 function updateStatsDisplay() {
-    const avgAnimateTime = animateTimeSamples.length > 0
+    // Average compute time (how long animate() takes to execute)
+    const avgComputeTime = animateTimeSamples.length > 0
         ? (animateTimeSamples.reduce((a, b) => a + b, 0) / animateTimeSamples.length).toFixed(2)
         : '0.00';
+
+    // Average frame time (actual RAF interval)
+    const avgFrameTime = frameTimeSamples.length > 0
+        ? (frameTimeSamples.reduce((a, b) => a + b, 0) / frameTimeSamples.length).toFixed(2)
+        : '0.00';
+
+    // Actual FPS from RAF timing
+    const fps = avgFrameTime > 0 ? (1000 / avgFrameTime).toFixed(1) : '0.0';
 
     statsDisplay.innerHTML = `
         <div>Screen: ${window.innerWidth}x${window.innerHeight}</div>
         <div>Device: ${getDeviceType()}</div>
-        <div>Avg Animate: ${avgAnimateTime}ms</div>
-        <div>Target Frame: ${TARGET_FRAME_TIME.toFixed(2)}ms</div>
+        <div>RAF Frame: ${avgFrameTime}ms (${fps} FPS)</div>
+        <div>Compute: ${avgComputeTime}ms</div>
     `;
 }
 
